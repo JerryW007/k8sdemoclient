@@ -1,0 +1,100 @@
+#deploy
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-demo-client
+spec:
+  selector:
+    matchLabels:
+      app: k8s-demo-client
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: k8s-demo-client
+    spec:
+      serviceAccountName: test
+      imagePullSecrets:
+        - name: my-aliyun-private-key
+      #      hostNetwork: true
+      containers:
+        - name: k8s-demo-client
+          image: registry.cn-shanghai.aliyuncs.com/snowballtech/k8s-demo-client:v1.9.5
+          command: [ "/bin/bash", "-ce", "tail -f /dev/null" ]
+          ports:
+            - containerPort: 9083
+#          livenessProbe:
+#            httpGet:
+#              path: /k8s-demo-client/hello
+#              port: 9083
+#            initialDelaySeconds: 30
+#            periodSeconds: 10
+#            successThreshold: 1
+#            failureThreshold: 3
+#            timeoutSeconds: 1
+          volumeMounts:
+            - name: k8s-demo-client-config
+              mountPath: /mnt
+              readOnly: true
+      volumes:
+        - name: k8s-demo-client-config
+          configMap:
+            name: k8s-demo-client-config
+#            items:
+#              - key: application.yaml
+#                path: k8sConfig.yml
+#          envFrom:
+#            - configMapRef:
+#                name: k8s-demo-client-config
+
+---
+#service
+apiVersion: v1
+kind: Service
+metadata:
+  name: k8s-demo-client-service
+spec:
+  ports:
+    - port: 9083
+      targetPort: 9083
+      nodePort: 30083
+      protocol: TCP
+  type: NodePort
+  selector:
+    app: k8s-demo-client
+
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: test #ClusterRoleBinding的名字
+subjects:
+  - kind: ServiceAccount
+    name: test #serviceaccount资源对象的name
+    namespace: default #serviceaccount的namespace
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: test # ServiceAccount的名字
+  namespace: default # serviceaccount的namespace
+  labels:
+    app: test #ServiceAccount的标签
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-k8s-demo-client
+spec:
+  rules:
+    - host: localhost
+      http:
+        paths:
+          - path: /k8s-demo-client
+            backend:
+              serviceName: k8s-demo-client-service
+              servicePort: 9083

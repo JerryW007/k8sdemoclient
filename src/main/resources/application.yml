@@ -1,0 +1,22 @@
+server:
+  port: 9083
+  servlet:
+    context-path: /k8s-demo-client
+backend:
+  ribbon:
+    eureka:
+      enabled: false
+    client:
+      enabled: true
+    ServerListRefreshInterval: 5000
+
+hystrix:
+  command:
+    BackendCall:
+      execution:
+        isolation:
+          thread:
+            timeoutInMilliseconds: 5000
+  threadpool:
+    BackendCallThread:
+      coreSize: 5

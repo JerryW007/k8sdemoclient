@@ -1,0 +1,1 @@
+# Spring cloud k8s demo client

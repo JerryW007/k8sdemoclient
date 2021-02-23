@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k8s-demo-client-config
+  namespace: default
+data:
+  application.yaml: |-
+    test:
+      showData: "你干啥呢,Hello,干啥呢?"
